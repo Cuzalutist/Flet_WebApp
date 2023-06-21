@@ -19,6 +19,11 @@ def main(page: ft.Page):
     )
     user_code.value = "Alex"
 
+    # RELOCATE COIL
+    coil_name = ft.TextField(label="Coil")
+    coil_location = ft.TextField(label="Location", disabled=True)
+    coil_new_location = ft.TextField(label="New Location")
+
     def route_change(route):
         page.views.clear()
         page.views.append(
@@ -32,7 +37,7 @@ def main(page: ft.Page):
                 ],
             )
         )
-        #TODO: CALL REST APP FOR MENUS FROM EMM5 App
+        #TODO: Call REST app for Menus from EMM5 App
         if page.route == "/menus":
             if user_code.value == "Alex":
                 page.views.append(
@@ -42,8 +47,7 @@ def main(page: ft.Page):
                             ft.AppBar(title=ft.Text("Menus"), bgcolor=ft.colors.SURFACE_VARIANT),
                             ft.ElevatedButton("Relocate Coils", width=400, height=50, on_click=lambda _: page.go("/relocate")),
                             ft.ElevatedButton("Inventry Check", width=400, height=50, on_click=lambda _: page.go("/inventrychk")),
-                            ft.ElevatedButton("Location Check", width=400, height=50, on_click=lambda _: page.go("/location")),
-                            ft.OutlinedButton("Go Home", on_click=lambda _: page.go("/")),
+                            ft.ElevatedButton("Location Check", width=400, height=50, on_click=lambda _: page.go("/location"))                            
                         ],
                     )
                 )
@@ -52,8 +56,23 @@ def main(page: ft.Page):
                     ft.View(
                         "/menus",
                         [
-                            ft.AppBar(title=ft.Text("Menus"), bgcolor=ft.colors.SURFACE_VARIANT),                            
-                            ft.ElevatedButton("Go Home", width=400, height=50, on_click=lambda _: page.go("/")),
+                            ft.AppBar(title=ft.Text("Menus"), bgcolor=ft.colors.SURFACE_VARIANT)
+                        ],
+                    )
+                )
+        page.update()
+
+        #TODO: Call REST app for POST to coil for EMM5 App
+        if page.route == "/relocate":
+            page.views.append(
+                    ft.View(
+                        "/relocate",
+                        [
+                            ft.AppBar(title=ft.Text("Relocate"), bgcolor=ft.colors.SURFACE_VARIANT),
+                            coil_name,
+                            coil_location,
+                            coil_new_location,
+                            ft.OutlinedButton("Log Out", on_click=lambda _: page.go("/menu")),
                         ],
                     )
                 )
