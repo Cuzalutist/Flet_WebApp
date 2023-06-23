@@ -1,4 +1,7 @@
 import flet as ft
+import requests as req
+import json
+
 
 def main(page: ft.Page):    
 
@@ -7,17 +10,35 @@ def main(page: ft.Page):
     
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.title = "EMM Mobile"
+    vHost = "http://192.168.1.78:8980/REST_EMMService/rest/REST_EMMService"
 
-    #TODO: Call REST API HERE TO LIST THE USERS
+    #Call REST API HERE TO LIST THE USERS
+    base_url_usersList     = vHost + "/UsersMenuList"
+    base_url_usersPassword = vHost + "/Users"
+    base_url_usersMenu     = vHost + "/UsersMenu"
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    # Make a GET request
+    response = req.get(base_url_usersList, headers=headers)
+    vUserListJson = []
+
+    if response.status_code == 200:
+        response_json = response.json()
+        vUserList = response_json['response']['userMenuList']['userMenuList']
+        for userList in vUserList:
+            vUserListJson.append(userList["ttUserCode"])
+    else:
+        print("Request failed with status code:", response.status_code)
+
     user_code = ft.Dropdown(
         # width=100,
-        options=[
-            ft.dropdown.Option("Alex"),
-            ft.dropdown.Option("Javra"),
-            ft.dropdown.Option("Mark"),
-        ]
+        options=[ft.dropdown.Option(userCode) for userCode in vUserListJson],
+        autofocus=True
     )
-    user_code.value = "Alex"
+    user_passcode = ft.TextField(label="Password")
+    user_code.value = vUserListJson[0]
 
     # RELOCATE COIL
     coil_name = ft.TextField(label="Coil")
@@ -66,13 +87,15 @@ def main(page: ft.Page):
                 [
                     ft.AppBar(title=ft.Text("EMM5 App"), bgcolor=ft.colors.SURFACE_VARIANT),
                     ft.Row(alignment=ft.MainAxisAlignment.SPACE_EVENLY,controls=[user_code]),
+                    ft.Row(alignment=ft.MainAxisAlignment.SPACE_EVENLY,controls=[user_passcode]),
                     ft.Row(alignment=ft.MainAxisAlignment.SPACE_EVENLY,controls=[ft.ElevatedButton("Login", on_click=open_user_menus)]),
                     greetings
                 ],
             )
         )
-        #TODO: Call REST app for Menus from EMM5 App
+        #Call REST app for Menus from EMM5 App
         if page.route == "/menus" or page.route == "/menus/relocate" or page.route == "/menus/locationCheck" or page.route == "/menus/inventoryCheck":
+
             if user_code.value == "Alex":
                 page.views.append(
                     ft.View(
@@ -140,7 +163,17 @@ def main(page: ft.Page):
     page.on_view_pop = view_pop
     
     def open_user_menus(e):
-        page.go("/menus")
+        # REST call for password verification
+        userURL = ("/" + user_code.value)        
+        response = req.get(base_url_usersPassword + userURL, headers=headers)
+
+        if response.status_code == 200:
+            response_json = response.json()
+            vUserRecord = response_json['response']['userRecord']['userRecord'][0]
+            if user_code.value == vUserRecord['ttUserCode'] and user_passcode.value == vUserRecord['ttUserPassword']:
+                page.go("/menus")
+            else:
+                print('Failed to authenticate')
     
     def open_menus_relocate(e):
         page.go("/menus/relocate")
