@@ -1,4 +1,5 @@
 import requests
+import json
 
 # Base URL and resource path
 base_url = "http://192.168.1.78:8980/REST_EMMService/rest/REST_EMMService"
@@ -17,8 +18,8 @@ if response.status_code == 200:
     # try:
         # Extract the output parameter from the response
     response_json = response.json()
-    vOut = response_json['response']['ttAllCoils']['ttAllCoils']
-    print("Output value (vOut):", vOut[2])
+    vOut = response_json['response']['ttAllCoils']['ttAllCoils'][0]
+    print("Coil name:", vOut['coilName'])
     # except KeyError as e:
     #     print("KeyError:", str(e))
     #     print("Response JSON:", response_json)
