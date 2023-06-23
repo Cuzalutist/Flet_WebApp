@@ -95,29 +95,26 @@ def main(page: ft.Page):
         )
         #Call REST app for Menus from EMM5 App
         if page.route == "/menus" or page.route == "/menus/relocate" or page.route == "/menus/locationCheck" or page.route == "/menus/inventoryCheck":
-
-            if user_code.value == "Alex":
-                page.views.append(
-                    ft.View(
-                        "/menus",
-                        [
-                            ft.AppBar(title=ft.Text("Menus"), bgcolor=ft.colors.SURFACE_VARIANT),
-                            ft.ElevatedButton("Relocate Coils", width=400, height=50, on_click=open_menus_relocate),
-                            ft.ElevatedButton("Inventry Check", width=400, height=50, on_click=open_inventoryCheck),
-                            ft.ElevatedButton("Location Check", width=400, height=50, on_click=open_menus_locationCheck)
-                        ],
-                    )
-                )
+            vUser = ('/' + user_code.value)
+            response = req.get(base_url_usersMenu + vUser, headers=headers)
+            vUserMenus = []
+            if response.status_code == 200:
+                response_json = response.json()
+                vUserMenusDict = response_json['response']['userMenu']['userMenu']
+                for menuList in vUserMenusDict:
+                    vUserMenus.append(menuList['ttMenuProgram'])
             else:
-                page.views.append(
-                    ft.View(
-                        "/menus",
-                        [
-                            ft.AppBar(title=ft.Text("Menus"), bgcolor=ft.colors.SURFACE_VARIANT)
-                        ],
-                    )
+                print("Request failed with status code:", response.status_code)
+            page.views.append(
+                ft.View(
+                    "/menus",
+                    [
+                        ft.AppBar(title=ft.Text("Menus"), bgcolor=ft.colors.SURFACE_VARIANT),
+                        *[ft.ElevatedButton(userMenus, width=400, height=50, on_click=open_menus_relocate) for userMenus in vUserMenus]
+                    ],
                 )
-        #TODO: Call REST app for POST to coil for EMM5 App
+            )
+        #Call REST app for POST to coil for EMM5 App
         if page.route == "/menus/relocate":
             page.views.append(
                     ft.View(
@@ -148,7 +145,7 @@ def main(page: ft.Page):
                         "/menus/inventoryCheck",
                         [
                             ft.AppBar(title=ft.Text("Inventory Check"), bgcolor=ft.colors.SURFACE_VARIANT),
-                            coil_inventory                            
+                            coil_inventory
                         ],
                     )
                 )
@@ -183,6 +180,16 @@ def main(page: ft.Page):
         
     def open_inventoryCheck(e):
         page.go("/menus/inventoryCheck")
+
+    # def open_menus(e):
+    #     if e == "Relocate Coils":
+    #         page.go("/menus/relocate")
+    #     elif e == "Inventory Check":
+    #         page.go("/menus/inventoryCheck")
+    #     elif e == "Location Check":
+    #         page.go("/menus/locationCheck")
+    #     else:
+    #         print("No menus")
     
     page.go(page.route)
 
