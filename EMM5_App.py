@@ -105,12 +105,13 @@ def main(page: ft.Page):
                     vUserMenus.append(menuList['ttMenuProgram'])
             else:
                 print("Request failed with status code:", response.status_code)
+            
             page.views.append(
                 ft.View(
                     "/menus",
                     [
                         ft.AppBar(title=ft.Text("Menus"), bgcolor=ft.colors.SURFACE_VARIANT),
-                        *[ft.ElevatedButton(userMenus, width=400, height=50, on_click=open_menus_relocate) for userMenus in vUserMenus]
+                        *[ft.ElevatedButton(userMenus, width=400, height=50, on_click=open_menus) for userMenus in vUserMenus]
                     ],
                 )
             )
@@ -171,25 +172,17 @@ def main(page: ft.Page):
                 page.go("/menus")
             else:
                 print('Failed to authenticate')
-    
-    def open_menus_relocate(e):
-        page.go("/menus/relocate")
-    
-    def open_menus_locationCheck(e):
-        page.go("/menus/locationCheck")
-        
-    def open_inventoryCheck(e):
-        page.go("/menus/inventoryCheck")
 
-    # def open_menus(e):
-    #     if e == "Relocate Coils":
-    #         page.go("/menus/relocate")
-    #     elif e == "Inventory Check":
-    #         page.go("/menus/inventoryCheck")
-    #     elif e == "Location Check":
-    #         page.go("/menus/locationCheck")
-    #     else:
-    #         print("No menus")
+    def open_menus(e):
+        userMenu = e.control.text
+        if userMenu == "Relocate Coils":
+            page.go("/menus/relocate")
+        elif userMenu == "Inventory Check":
+            page.go("/menus/inventoryCheck")
+        elif userMenu == "Location Check":
+            page.go("/menus/locationCheck")
+        else:
+            print("No menus")
     
     page.go(page.route)
 
