@@ -111,7 +111,6 @@ def main(page: ft.Page):
                     )
                 )
         if page.route == "/menus/locationCheck":
-            print(data_table)
             page.views.append(
                     ft.View(
                         "/menus/locationCheck",
@@ -158,18 +157,7 @@ def main(page: ft.Page):
                 page.go("/menus")
             else:
                 print('Failed to authenticate')
-
-    def open_menus(e):
-        userMenu = e.control.text
-        if userMenu == "Relocate Coils":
-            page.go("/menus/relocate")
-        elif userMenu == "Inventory Check":
-            page.go("/menus/inventoryCheck")
-        elif userMenu == "Location Check":
-            page.go("/menus/locationCheck")
-        else:
-            print("No menus")
-
+    
     # Check coils and fill the table
     def add_dataTable(e):
         locationURL = ("/" + coil_location_view.value)
@@ -188,6 +176,17 @@ def main(page: ft.Page):
                                 ],
                         ))
             page.update()
+
+    def open_menus(e):
+        userMenu = e.control.text
+        if userMenu == "Relocate Coils":
+            page.go("/menus/relocate")
+        elif userMenu == "Inventory Check":
+            page.go("/menus/inventoryCheck")
+        elif userMenu == "Location Check":
+            page.go("/menus/locationCheck")
+        else:
+            print("No menus")
 
     page.go(page.route)
 
