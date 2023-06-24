@@ -25,7 +25,6 @@ def main(page: ft.Page):
     # Make a GET request
     response = req.get(base_url_usersList, headers=headers)
     vUserListJson = []
-    data_table = []
 
     if response.status_code == 200:
         response_json = response.json()
@@ -50,6 +49,7 @@ def main(page: ft.Page):
     coil_new_location = ft.TextField(label="New Location")
     coil_inventory = ft.Text("Inventory under construction !!")
     
+    data_table = []
     coil_table = ft.DataTable(
                     columns=[
                         ft.DataColumn(ft.Text("CoilName")),
@@ -166,6 +166,7 @@ def main(page: ft.Page):
         if response.status_code == 200:
             response_json = response.json()
             vCoilRecords = response_json['response']['ttCoilLocation']['ttCoilLocation']
+            data_table.clear()
             for vCoilRecord in vCoilRecords:
                 # print(vCoilRecord['coilName'])
                 data_table.append(ft.DataRow(
