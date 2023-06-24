@@ -15,7 +15,9 @@ def main(page: ft.Page):
     #Call REST API HERE TO LIST THE USERS
     base_url_usersList     = vHost + "/UsersMenuList"
     base_url_usersPassword = vHost + "/Users"
+    base_url_usersEncodedPassword = vHost + "/UsersPassEncoded"
     base_url_usersMenu     = vHost + "/UsersMenu"
+    base_url_coilLocation  = vHost + "/Coils/Location"
     headers = {
         "Content-Type": "application/json"
     }
@@ -23,6 +25,7 @@ def main(page: ft.Page):
     # Make a GET request
     response = req.get(base_url_usersList, headers=headers)
     vUserListJson = []
+    data_table = []
 
     if response.status_code == 200:
         response_json = response.json()
@@ -41,7 +44,7 @@ def main(page: ft.Page):
     user_code.value = vUserListJson[0]
 
     # RELOCATE COIL
-    coil_name = ft.TextField(label="Coil")
+    coil_name = ft.TextField(label="Coil", autofocus=True)
     coil_location = ft.TextField(label="Location", disabled=True)
     coil_location_view = ft.TextField(label="Location", autofocus=True)
     coil_new_location = ft.TextField(label="New Location")
@@ -53,29 +56,7 @@ def main(page: ft.Page):
                         ft.DataColumn(ft.Text("CoilNum"), numeric=True),
                         ft.DataColumn(ft.Text("Location")),
                     ],
-                    rows=[
-                        ft.DataRow(
-                            cells=[
-                                ft.DataCell(ft.Text("3725498")),
-                                ft.DataCell(ft.Text("3725498")),
-                                ft.DataCell(ft.Text("B-000-01")),
-                            ],
-                        ),
-                        ft.DataRow(
-                            cells=[
-                                ft.DataCell(ft.Text("3725466X0G")),
-                                ft.DataCell(ft.Text("3748962")),
-                                ft.DataCell(ft.Text("B-000-01")),
-                            ],
-                        ),
-                        ft.DataRow(
-                            cells=[
-                                ft.DataCell(ft.Text("3709969X01")),
-                                ft.DataCell(ft.Text("3753669")),
-                                ft.DataCell(ft.Text("B-000-01")),
-                            ],
-                        ),
-                    ],
+                    rows=data_table
                 )
     
 
@@ -130,14 +111,15 @@ def main(page: ft.Page):
                     )
                 )
         if page.route == "/menus/locationCheck":
+            print(data_table)
             page.views.append(
                     ft.View(
                         "/menus/locationCheck",
                         [
                             ft.AppBar(title=ft.Text("Location Check"), bgcolor=ft.colors.SURFACE_VARIANT),
-                            coil_location_view,
+                            ft.Column(controls=[ft.Row(controls=[coil_location_view,ft.FloatingActionButton(icon=ft.icons.CHECK, on_click=add_dataTable)])]),
                             coil_table
-                        ],
+                        ]
                     )
                 )
         if page.route == "/menus/inventoryCheck":
@@ -162,13 +144,17 @@ def main(page: ft.Page):
     
     def open_user_menus(e):
         # REST call for password verification
-        userURL = ("/" + user_code.value)        
+        userURL = ("/" + user_code.value)
+        userPassCodeURL = ("/" + user_passcode.value)
         response = req.get(base_url_usersPassword + userURL, headers=headers)
+        responeEncoded = req.get(base_url_usersEncodedPassword + userPassCodeURL, headers=headers)
 
-        if response.status_code == 200:
+        if response.status_code == 200 and responeEncoded.status_code == 200:
             response_json = response.json()
+            response_json_pass = responeEncoded.json()
             vUserRecord = response_json['response']['userRecord']['userRecord'][0]
-            if user_code.value == vUserRecord['ttUserCode'] and user_passcode.value == vUserRecord['ttUserPassword']:
+            vUserPassEncoded = response_json_pass['response']['userPassEncoded']
+            if user_code.value == vUserRecord['ttUserCode'] and vUserRecord['ttUserPassword'] == vUserPassEncoded:
                 page.go("/menus")
             else:
                 print('Failed to authenticate')
@@ -183,7 +169,26 @@ def main(page: ft.Page):
             page.go("/menus/locationCheck")
         else:
             print("No menus")
-    
+
+    # Check coils and fill the table
+    def add_dataTable(e):
+        locationURL = ("/" + coil_location_view.value)
+        response = req.get(base_url_coilLocation + locationURL, headers=headers)
+        # data_table = []
+        if response.status_code == 200:
+            response_json = response.json()
+            vCoilRecords = response_json['response']['ttCoilLocation']['ttCoilLocation']
+            for vCoilRecord in vCoilRecords:
+                # print(vCoilRecord['coilName'])
+                data_table.append(ft.DataRow(
+                                  cells=[
+                                    ft.DataCell(ft.Text(vCoilRecord['coilName'])),
+                                    ft.DataCell(ft.Text(vCoilRecord['coilNum'])),
+                                    ft.DataCell(ft.Text(vCoilRecord['coilLocation'])),
+                                ],
+                        ))
+            page.update()
+
     page.go(page.route)
 
 ft.app(target=main)
