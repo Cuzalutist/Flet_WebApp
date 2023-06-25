@@ -18,6 +18,7 @@ def main(page: ft.Page):
     base_url_usersEncodedPassword = vHost + "/UsersPassEncoded"
     base_url_usersMenu     = vHost + "/UsersMenu"
     base_url_coilLocation  = vHost + "/Coils/Location"
+    base_url_coil          = vHost + "/Coils"
     headers = {
         "Content-Type": "application/json"
     }
@@ -43,13 +44,27 @@ def main(page: ft.Page):
     user_code.value = vUserListJson[0]
 
     def coil_changed(e):
-        print(e.control.value)
+        coil_value = e.control.value
+        coilURL = ("/" + coil_value)
+        response = req.get(base_url_coil + coilURL, headers=headers)
+        if response.status_code == 200:
+            try:
+                response_json = response.json()
+                vCoilRecord = response_json['response']['coilRecord']['coilRecord'][0]
+                coil_location.value = vCoilRecord['glocc']
+            except IndexError:
+                print("Index out of range error !")
+            except KeyError:
+                print("KeyError: 'coilRecord' key not found in the response.")
+            page.update()
+        else:
+            print("Request failed with status code:", response.status_code)
 
     # RELOCATE COIL
-    coil_name = ft.TextField(label="Coil", autofocus=True, hint_text="Scanned Coil Name", on_change=coil_changed)
-    coil_location = ft.TextField(label="Location", disabled=True)
-    coil_location_view = ft.TextField(label="Location", autofocus=True, width=200)
-    coil_new_location = ft.TextField(label="New Location")
+    coil_name = ft.TextField(label="Coil", autofocus=True, width=200, hint_text="Scanned Coil Name", on_change=coil_changed)
+    coil_location = ft.TextField(label="Old Location", width=200, disabled=True)
+    coil_location_view = ft.TextField(label="Location", autofocus=True, width=200, hint_text="Scanned Location")
+    coil_new_location = ft.TextField(label="New Location", width=200, hint_text="New coil location")
     coil_inventory = ft.Text("Inventory under construction !!")
     
     data_table = []
@@ -106,7 +121,7 @@ def main(page: ft.Page):
                         "/menus/relocate",
                         [
                             ft.AppBar(title=ft.Text("Relocate"), bgcolor=ft.colors.SURFACE_VARIANT),
-                            coil_name,
+                            ft.Column(controls=[ft.Row(controls=[coil_name,ft.FloatingActionButton(icon=ft.icons.CHECK, on_click=update_coil),ft.FloatingActionButton(icon=ft.icons.CANCEL_SHARP, on_click=reset_relocation)])]),
                             coil_location,
                             coil_new_location,
                             ft.OutlinedButton("Log Out", on_click=lambda _: page.go("/menu")),
@@ -188,9 +203,19 @@ def main(page: ft.Page):
         coil_location_view.value = ''
         data_table.clear()
 
+    def update_coil():
+        #TODO: update the coil location via REST api call
+        print("Update Coil !")
+
     # Reset the screen location check
     def reset_dataTable(e):
         reset_coil_location()
+        page.update()
+    
+    def reset_relocation(e):
+        coil_name.value = ''
+        coil_location.value = ''
+        coil_new_location.value = ''
         page.update()
 
     def open_menus(e):
