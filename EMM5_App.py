@@ -42,10 +42,13 @@ def main(page: ft.Page):
     user_passcode = ft.TextField(label="Password")
     user_code.value = vUserListJson[0]
 
+    def coil_changed(e):
+        print(e.control.value)
+
     # RELOCATE COIL
-    coil_name = ft.TextField(label="Coil", autofocus=True)
+    coil_name = ft.TextField(label="Coil", autofocus=True, hint_text="Scanned Coil Name", on_change=coil_changed)
     coil_location = ft.TextField(label="Location", disabled=True)
-    coil_location_view = ft.TextField(label="Location", autofocus=True)
+    coil_location_view = ft.TextField(label="Location", autofocus=True, width=200)
     coil_new_location = ft.TextField(label="New Location")
     coil_inventory = ft.Text("Inventory under construction !!")
     
@@ -111,12 +114,13 @@ def main(page: ft.Page):
                     )
                 )
         if page.route == "/menus/locationCheck":
+            reset_coil_location()
             page.views.append(
                     ft.View(
                         "/menus/locationCheck",
                         [
                             ft.AppBar(title=ft.Text("Location Check"), bgcolor=ft.colors.SURFACE_VARIANT),
-                            ft.Column(controls=[ft.Row(controls=[coil_location_view,ft.FloatingActionButton(icon=ft.icons.CHECK, on_click=add_dataTable)])]),
+                            ft.Column(controls=[ft.Row(controls=[coil_location_view,ft.FloatingActionButton(icon=ft.icons.CHECK, on_click=add_dataTable),ft.FloatingActionButton(icon=ft.icons.CANCEL_SHARP, on_click=reset_dataTable)])]),
                             coil_table
                         ]
                     )
@@ -162,21 +166,32 @@ def main(page: ft.Page):
     def add_dataTable(e):
         locationURL = ("/" + coil_location_view.value)
         response = req.get(base_url_coilLocation + locationURL, headers=headers)
-        # data_table = []
-        if response.status_code == 200:
-            response_json = response.json()
-            vCoilRecords = response_json['response']['ttCoilLocation']['ttCoilLocation']
+        if coil_location_view.value == '':
             data_table.clear()
-            for vCoilRecord in vCoilRecords:
-                # print(vCoilRecord['coilName'])
-                data_table.append(ft.DataRow(
-                                  cells=[
-                                    ft.DataCell(ft.Text(vCoilRecord['coilName'])),
-                                    ft.DataCell(ft.Text(vCoilRecord['coilNum'])),
-                                    ft.DataCell(ft.Text(vCoilRecord['coilLocation'])),
-                                ],
-                        ))
-            page.update()
+        else:
+            if response.status_code == 200:
+                response_json = response.json()
+                vCoilRecords = response_json['response']['ttCoilLocation']['ttCoilLocation']
+                data_table.clear()
+                for vCoilRecord in vCoilRecords:
+                    # print(vCoilRecord['coilName'])
+                    data_table.append(ft.DataRow(
+                                      cells=[
+                                        ft.DataCell(ft.Text(vCoilRecord['coilName'])),
+                                        ft.DataCell(ft.Text(vCoilRecord['coilNum'])),
+                                        ft.DataCell(ft.Text(vCoilRecord['coilLocation'])),
+                                    ],
+                            ))
+        page.update()
+
+    def reset_coil_location():
+        coil_location_view.value = ''
+        data_table.clear()
+
+    # Reset the screen location check
+    def reset_dataTable(e):
+        reset_coil_location()
+        page.update()
 
     def open_menus(e):
         userMenu = e.control.text
