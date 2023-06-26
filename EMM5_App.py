@@ -68,9 +68,9 @@ def main(page: ft.Page):
     coil_inventory = ft.Text("Inventory under construction !!")
 
     emm_logo = ft.Image(
-        src=f"./icons/logo.png",
-        width=100,
-        height=100,
+        src=f"/icons/logo.png",
+        width=200,
+        height=200,
         fit=ft.ImageFit.CONTAIN,
     )
     
@@ -159,10 +159,11 @@ def main(page: ft.Page):
                         "/menus/relocate",
                         [
                             ft.AppBar(title=ft.Text("Relocate"), bgcolor=ft.colors.SURFACE_VARIANT),
-                            ft.Column(controls=[ft.Row(controls=[coil_name,ft.FloatingActionButton(icon=ft.icons.CHECK, on_click=update_coil),ft.FloatingActionButton(icon=ft.icons.CANCEL_SHARP, on_click=reset_relocation)])]),
+                            ft.Column(controls=[ft.Row(controls=[coil_name,ft.FloatingActionButton(icon=ft.icons.CANCEL_SHARP, on_click=reset_relocation)])]),
                             coil_location,
                             coil_new_location,
-                            ft.OutlinedButton("Log Out", on_click=lambda _: page.go("/menu")),
+                            ft.OutlinedButton("Update Coil Location", height=50, width=200, on_click=update_coil),
+                            ft.OutlinedButton("Log Out", height=50, width=200, on_click=lambda _: page.go("/menu")),
                         ],
                     )
                 )
@@ -282,4 +283,4 @@ def main(page: ft.Page):
 
     page.go(page.route)
 
-ft.app(target=main)
+ft.app(target=main, view="web_browser", assets_dir="assets")
