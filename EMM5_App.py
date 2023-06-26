@@ -197,6 +197,7 @@ def main(page: ft.Page):
                                         ft.DataCell(ft.Text(vCoilRecord['coilLocation'])),
                                     ],
                             ))
+        coil_location_view.focus()
         page.update()
 
     def reset_coil_location():
@@ -210,6 +211,7 @@ def main(page: ft.Page):
     # Reset the screen location check
     def reset_dataTable(e):
         reset_coil_location()
+        coil_location_view.focus()
         page.update()
     
     def reset_relocation(e):

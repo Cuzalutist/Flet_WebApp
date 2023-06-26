@@ -1,9 +1,32 @@
-import json
+import flet as ft
 
-my_dict = {'coilName': '3735813', 'href': 'http://192.168.1.78:8980/REST_EMMService/rest/REST_EMMService/Coils/3735813'}
+def main(page: ft.Page):
+    def bs_dismissed(e):
+        print("Dismissed!")
 
-# json_str = json.dumps(my_dict)
-# data = json.loads(json_str)
-coil_name = my_dict['href']
+    def show_bs(e):
+        bs.open = True
+        bs.update()
 
-print(coil_name)
+    def close_bs(e):
+        bs.open = False
+        bs.update()
+
+    bs = ft.BottomSheet(
+        ft.Container(
+            ft.Column(
+                [
+                    ft.Text("This is sheet's content!"),
+                    ft.ElevatedButton("Close bottom sheet", on_click=close_bs),
+                ],
+                tight=True,
+            ),
+            padding=10,
+        ),
+        open=True,
+        on_dismiss=bs_dismissed,
+    )
+    page.overlay.append(bs)
+    page.add(ft.ElevatedButton("Display bottom sheet", on_click=show_bs))
+
+ft.app(target=main)
