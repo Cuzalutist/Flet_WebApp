@@ -66,6 +66,13 @@ def main(page: ft.Page):
     coil_location_view = ft.TextField(label="Location", autofocus=True, width=200, hint_text="Scanned Location")
     coil_new_location = ft.TextField(label="New Location", width=200, hint_text="New coil location")
     coil_inventory = ft.Text("Inventory under construction !!")
+
+    emm_logo = ft.Image(
+        src=f"./icons/logo.png",
+        width=100,
+        height=100,
+        fit=ft.ImageFit.CONTAIN,
+    )
     
     data_table = []
     coil_table = ft.DataTable(
@@ -76,8 +83,38 @@ def main(page: ft.Page):
                     ],
                     rows=data_table
                 )
-    
 
+    def bs_dismissed(e):
+        print("Dismissed!")
+
+    successCoil = ft.BottomSheet(
+                ft.Container(
+                    ft.Column(
+                        [
+                            ft.Text("Coil sucessfully updated !")
+                        ],
+                        tight=True,
+                    ),
+                    padding=10,
+                ),
+                open=True,
+                on_dismiss=bs_dismissed,
+            )
+
+    failedCoil = ft.BottomSheet(
+                ft.Container(
+                    ft.Column(
+                        [
+                            ft.Text("Failed to update the coil !")
+                        ],
+                        tight=True,
+                    ),
+                    padding=10,
+                ),
+                open=True,
+                on_dismiss=bs_dismissed,
+            )
+    
     def route_change(route):
         page.views.clear()
         page.views.append(
@@ -85,6 +122,7 @@ def main(page: ft.Page):
                 "/",
                 [
                     ft.AppBar(title=ft.Text("EMM5 App"), bgcolor=ft.colors.SURFACE_VARIANT),
+                    ft.Row(alignment=ft.MainAxisAlignment.SPACE_EVENLY,controls=[emm_logo]),
                     ft.Row(alignment=ft.MainAxisAlignment.SPACE_EVENLY,controls=[user_code]),
                     ft.Row(alignment=ft.MainAxisAlignment.SPACE_EVENLY,controls=[user_passcode]),
                     ft.Row(alignment=ft.MainAxisAlignment.SPACE_EVENLY,controls=[ft.ElevatedButton("Login", on_click=open_user_menus)]),
@@ -204,9 +242,19 @@ def main(page: ft.Page):
         coil_location_view.value = ''
         data_table.clear()
 
-    def update_coil():
+    def update_coil(e):
         #TODO: update the coil location via REST api call
-        print("Update Coil !")
+        
+        abp = False
+        page.overlay.clear()
+        if abp == True:
+            page.overlay.append(successCoil)
+            successCoil.open = True
+        else:
+            page.overlay.append(failedCoil)
+            failedCoil.open = True
+        coil_name.focus()
+        page.update()        
 
     # Reset the screen location check
     def reset_dataTable(e):
@@ -218,6 +266,7 @@ def main(page: ft.Page):
         coil_name.value = ''
         coil_location.value = ''
         coil_new_location.value = ''
+        coil_name.focus()
         page.update()
 
     def open_menus(e):
