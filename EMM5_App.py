@@ -5,11 +5,12 @@ import json
 
 def main(page: ft.Page):    
 
-    # user_code = ft.TextField(label="User", autofocus=True)    
+    # user_code = ft.TextField(label="User", autofocus=True)
     greetings = ft.Column()
     
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.title = "EMM Mobile"
+    page.theme_mode = "light"
     vHost = "http://192.168.1.78:8980/REST_EMMService/rest/REST_EMMService"
 
     #Call REST API HERE TO LIST THE USERS
@@ -62,10 +63,11 @@ def main(page: ft.Page):
 
     # RELOCATE COIL
     coil_name = ft.TextField(label="Coil", autofocus=True, width=200, hint_text="Scanned Coil Name", on_change=coil_changed)
-    coil_location = ft.TextField(label="Old Location", width=200, disabled=True)
+    coil_location = ft.TextField(label="Old Location", width=270, disabled=True)
     coil_location_view = ft.TextField(label="Location", autofocus=True, width=200, hint_text="Scanned Location")
-    coil_new_location = ft.TextField(label="New Location", width=200, hint_text="New coil location")
+    coil_new_location = ft.TextField(label="New Location", width=270, hint_text="New coil location")
     coil_inventory = ft.Text("Inventory under construction !!")
+    authMessage = ft.Text(value='', color="red", weight=ft.FontWeight.BOLD, size=20)
 
     emm_logo = ft.Image(
         src=f"/icons/logo.png",
@@ -125,8 +127,25 @@ def main(page: ft.Page):
                     ft.Row(alignment=ft.MainAxisAlignment.SPACE_EVENLY,controls=[emm_logo]),
                     ft.Row(alignment=ft.MainAxisAlignment.SPACE_EVENLY,controls=[user_code]),
                     ft.Row(alignment=ft.MainAxisAlignment.SPACE_EVENLY,controls=[user_passcode]),
-                    ft.Row(alignment=ft.MainAxisAlignment.SPACE_EVENLY,controls=[ft.ElevatedButton("Login", on_click=open_user_menus)]),
-                    greetings
+                    # ft.Row(alignment=ft.MainAxisAlignment.SPACE_EVENLY,controls=[ft.ElevatedButton("Login", width=300, height=50, on_click=open_user_menus)]),
+                    ft.Row(alignment=ft.MainAxisAlignment.SPACE_EVENLY,
+                            controls=[ft.ElevatedButton(content=ft.Container
+                                                        (
+                                                            content=ft.Column(
+                                                                [
+                                                                    ft.Text(value="Login", size=20)
+                                                                ],
+                                                                alignment=ft.MainAxisAlignment.CENTER,
+                                                                spacing=5,
+                                                            ),
+                                                            padding=ft.padding.all(10),
+                                                        ),
+                                                        width=300, 
+                                                        height=50, 
+                                                        on_click=open_user_menus
+                                                        )
+                                    ]),
+                    ft.Row(alignment=ft.MainAxisAlignment.SPACE_EVENLY,controls=[authMessage])
                 ],
             )
         )
@@ -148,7 +167,24 @@ def main(page: ft.Page):
                     "/menus",
                     [
                         ft.AppBar(title=ft.Text("Menus"), bgcolor=ft.colors.SURFACE_VARIANT),
-                        *[ft.ElevatedButton(userMenus, width=400, height=50, on_click=open_menus) for userMenus in vUserMenus]
+                        # *[ft.ElevatedButton(userMenus, size=20, width=250, height=70, on_click=open_menus) for userMenus in vUserMenus]
+                        *[
+                            ft.ElevatedButton(userMenus,
+                                content=ft.Container(
+                                    content=ft.Column(
+                                        [
+                                            ft.Text(value=userMenus, size=20)                                            
+                                        ],
+                                        alignment=ft.MainAxisAlignment.CENTER,
+                                        spacing=5,
+                                    ),
+                                    padding=ft.padding.all(10),
+                                ),
+                                width=250, 
+                                height=70, 
+                                on_click=open_menus
+                            ) for userMenus in vUserMenus
+                        ]
                     ],
                 )
             )
@@ -162,8 +198,36 @@ def main(page: ft.Page):
                             ft.Column(controls=[ft.Row(controls=[coil_name,ft.FloatingActionButton(icon=ft.icons.CANCEL_SHARP, on_click=reset_relocation)])]),
                             coil_location,
                             coil_new_location,
-                            ft.OutlinedButton("Update Coil Location", height=50, width=200, on_click=update_coil),
-                            ft.OutlinedButton("Log Out", height=50, width=200, on_click=lambda _: page.go("/menu")),
+                            # ft.OutlinedButton("Update Coil Location", height=50, width=200, on_click=update_coil),
+                            ft.ElevatedButton(content=ft.Container(
+                                                content=ft.Column(
+                                                    [
+                                                        ft.Text(value="Update Coil Location", size=20)                                                            
+                                                    ],
+                                                    alignment=ft.MainAxisAlignment.CENTER,
+                                                    spacing=5,
+                                                ),
+                                                padding=ft.padding.all(10),
+                                                ),
+                                                height=50, 
+                                                width=270,
+                                                on_click=update_coil
+                                            ),
+                            # ft.OutlinedButton("Log Out", height=50, width=200, on_click=lambda _: page.go("/menu")),
+                            ft.ElevatedButton(content=ft.Container(
+                                                content=ft.Column(
+                                                    [
+                                                        ft.Text(value="Log Out", size=20)                                                            
+                                                    ],
+                                                    alignment=ft.MainAxisAlignment.CENTER,
+                                                    spacing=5,
+                                                ),
+                                                padding=ft.padding.all(10),
+                                                ),
+                                                height=50, 
+                                                width=270,
+                                                on_click=lambda _: page.go("/menu")
+                                            )
                         ],
                     )
                 )
@@ -212,9 +276,11 @@ def main(page: ft.Page):
             vUserRecord = response_json['response']['userRecord']['userRecord'][0]
             vUserPassEncoded = response_json_pass['response']['userPassEncoded']
             if user_code.value == vUserRecord['ttUserCode'] and vUserRecord['ttUserPassword'] == vUserPassEncoded:
+                reset_password()
                 page.go("/menus")
             else:
-                print('Failed to authenticate')
+                authMessage.value = "Failed to authenticate"
+                page.update()
     
     # Check coils and fill the table
     def add_dataTable(e):
@@ -242,6 +308,10 @@ def main(page: ft.Page):
     def reset_coil_location():
         coil_location_view.value = ''
         data_table.clear()
+
+    def reset_password():
+        user_passcode.value = ''
+        authMessage.value = ''
 
     def update_coil(e):
         #TODO: update the coil location via REST api call
@@ -283,4 +353,4 @@ def main(page: ft.Page):
 
     page.go(page.route)
 
-ft.app(target=main, view="web_browser", assets_dir="assets")
+ft.app(target=main, assets_dir="assets")
