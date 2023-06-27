@@ -99,7 +99,7 @@ def main(page: ft.Page):
     def bs_dismissed(e):
         print("Dismissed!")
     
-    coil_info_text = ft.Text("Coil Updated Successfully !!", weight=ft.FontWeight.BOLD, color="green", size=20)
+    coil_info_text = ft.Text(weight=ft.FontWeight.BOLD, color="green", size=20)
 
     def update_coil(e):
         #TODO: update the coil location via REST api call
@@ -121,17 +121,20 @@ def main(page: ft.Page):
                 request = req.post(base_url_coil + coilURL, json=json_payload, headers=headers)
                 if request.status_code == 200:
                     coil_info.visible = True
-                    coil_info_text.value = "GG"
+                    coil_info_text.value = "Coil " + coil_name.value + " location has been changed to " + coil_new_location.value + " successfully !!"
+                    coil_location.value = coil_new_location.value
                     page.overlay.append(successCoil)
                     successCoil.open = True
                 else:
                     page.overlay.append(failedCoil)
                     failedCoil.open = True
             else:
+                coil_info_text.value = "Invalid location for Coil " + coil_name.value + "!!"
+                coil_info_text.color = "red"
+                coil_info.visible = True
                 page.overlay.append(failedCoilLocation)
                 failedCoilLocation.open = True
             coil_name.focus()
-            coil_location_view.value = coil_new_location.value
             page.update()
 
     successCoil = ft.BottomSheet(
@@ -278,6 +281,7 @@ def main(page: ft.Page):
             )
         #Call REST app for POST to coil for EMM5 App
         if page.route == "/menus/relocate":
+            reset_relocate()
             page.views.append(
                     ft.View(
                         "/menus/relocate",
@@ -400,10 +404,14 @@ def main(page: ft.Page):
         coil_location_view.focus()
         page.update()
     
-    def reset_relocation(e):
+    def reset_relocate():
         coil_name.value = ''
         coil_location.value = ''
         coil_new_location.value = ''
+        coil_info.visible = False
+    
+    def reset_relocation(e):
+        reset_relocate()
         coil_name.focus()
         page.update()
 
