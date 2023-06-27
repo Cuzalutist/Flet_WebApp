@@ -11,6 +11,8 @@ def main(page: ft.Page):
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.title = "EMM Mobile"
     page.theme_mode = "light"
+    page.window_height = 800
+    page.window_width = 450
     vHost = "http://192.168.1.78:8980/REST_EMMService/rest/REST_EMMService"
 
     #Call REST API HERE TO LIST THE USERS
@@ -19,6 +21,7 @@ def main(page: ft.Page):
     base_url_usersEncodedPassword = vHost + "/UsersPassEncoded"
     base_url_usersMenu     = vHost + "/UsersMenu"
     base_url_coilLocation  = vHost + "/Coils/Location"
+    base_url_location      = vHost + "/Location"
     base_url_coil          = vHost + "/Coils"
     headers = {
         "Content-Type": "application/json"
@@ -46,26 +49,30 @@ def main(page: ft.Page):
 
     def coil_changed(e):
         coil_value = e.control.value
+        if coil_value == "":
+            coil_value = '~'
         coilURL = ("/" + coil_value)
         response = req.get(base_url_coil + coilURL, headers=headers)
         if response.status_code == 200:
-            try:
-                response_json = response.json()
+            # print(base_url_coil + coilURL)
+            response_json = response.json()
+            response_json_obj = response_json['response']['coilRecord']['coilRecord']
+            if len(response_json_obj) > 0:
                 vCoilRecord = response_json['response']['coilRecord']['coilRecord'][0]
                 coil_location.value = vCoilRecord['glocc']
-            except IndexError:
-                print("Index out of range error !")
-            except KeyError:
-                print("KeyError: 'coilRecord' key not found in the response.")
+                update_coil_btn.disabled = False
+            else:
+                coil_location.value = ''
+                update_coil_btn.disabled = True
             page.update()
         else:
             print("Request failed with status code:", response.status_code)
 
     # RELOCATE COIL
-    coil_name = ft.TextField(label="Coil", autofocus=True, width=200, hint_text="Scanned Coil Name", on_change=coil_changed)
-    coil_location = ft.TextField(label="Old Location", width=270, disabled=True)
-    coil_location_view = ft.TextField(label="Location", autofocus=True, width=200, hint_text="Scanned Location")
-    coil_new_location = ft.TextField(label="New Location", width=270, hint_text="New coil location")
+    coil_name = ft.TextField(label="Coil", autofocus=True, width=350, hint_text="Scanned Coil Name", on_change=coil_changed)
+    coil_location = ft.TextField(label="Old Location", disabled=True)
+    coil_location_view = ft.TextField(label="Location", autofocus=True, width=280, hint_text="Scanned Location")
+    coil_new_location = ft.TextField(label="New Location", hint_text="New coil location")
     coil_inventory = ft.Text("Inventory under construction !!")
     authMessage = ft.Text(value='', color="red", weight=ft.FontWeight.BOLD, size=20)
 
@@ -77,23 +84,61 @@ def main(page: ft.Page):
     )
     
     data_table = []
+    coil_table_list = ft.ListView(expand=1, auto_scroll=False)
     coil_table = ft.DataTable(
                     columns=[
                         ft.DataColumn(ft.Text("CoilName")),
                         ft.DataColumn(ft.Text("CoilNum"), numeric=True),
                         ft.DataColumn(ft.Text("Location")),
                     ],
-                    rows=data_table
+                    rows=data_table,
+                    width=380
                 )
+    coil_table_list.controls.append(coil_table)
 
     def bs_dismissed(e):
         print("Dismissed!")
+    
+    coil_info_text = ft.Text("Coil Updated Successfully !!", weight=ft.FontWeight.BOLD, color="green", size=20)
+
+    def update_coil(e):
+        #TODO: update the coil location via REST api call
+        coilURL = ("/" + coil_name.value)
+        locationURL = ("/" + coil_new_location.value)
+        response = req.get(base_url_coil + coilURL, headers=headers)
+        response_location = req.get(base_url_location + locationURL, headers=headers)
+        
+        if response.status_code == 200 and response_location.status_code == 200:
+            page.overlay.clear()
+            response_json = response.json()
+            response_location_json = response_location.json()
+            isValidLocation = response_location_json['response']['validLocation']
+
+            if eval(isValidLocation) == True:
+                response_json['request'] = response_json.pop('response')
+                response_json['request']['coilRecord']['coilRecord'][0]['glocc'] = coil_new_location.value
+                json_payload = response_json
+                request = req.post(base_url_coil + coilURL, json=json_payload, headers=headers)
+                if request.status_code == 200:
+                    coil_info.visible = True
+                    coil_info_text.value = "GG"
+                    page.overlay.append(successCoil)
+                    successCoil.open = True
+                else:
+                    page.overlay.append(failedCoil)
+                    failedCoil.open = True
+            else:
+                page.overlay.append(failedCoilLocation)
+                failedCoilLocation.open = True
+            coil_name.focus()
+            coil_location_view.value = coil_new_location.value
+            page.update()
 
     successCoil = ft.BottomSheet(
                 ft.Container(
                     ft.Column(
                         [
-                            ft.Text("Coil sucessfully updated !")
+                            ft.Text("Coil sucessfully updated !", weight=ft.FontWeight.BOLD, color="green", size=20)
                         ],
                         tight=True,
                     ),
@@ -107,15 +152,58 @@ def main(page: ft.Page):
                 ft.Container(
                     ft.Column(
                         [
-                            ft.Text("Failed to update the coil !")
+                            ft.Text("Failed to update the coil !", weight=ft.FontWeight.BOLD, color="red", size=20),
+                            ft.Text("", size=20)
                         ],
                         tight=True,
                     ),
-                    padding=10,
+                    padding=10
                 ),
                 open=True,
                 on_dismiss=bs_dismissed,
             )
+    
+    failedCoilLocation = ft.BottomSheet(
+                        ft.Container(
+                            ft.Column(
+                                [
+                                    ft.Text("Invalid Location !", weight=ft.FontWeight.BOLD, color="red", size=20),
+                                    ft.Text("", size=20)
+                                ],
+                                tight=True,
+                            ),
+                            padding=10
+                        ),
+                        open=True,
+                        on_dismiss=bs_dismissed,
+                    )
+        
+    coil_info = ft.Container(
+                    ft.Column(
+                        [
+                            coil_info_text
+                        ],
+                        tight=True,
+                    ),
+                    padding=10,
+                    visible=False
+                )
+    
+    update_coil_btn = ft.ElevatedButton(content=ft.Container(
+                                          content=ft.Column(
+                                              [
+                                                  ft.Text(value="Update Coil Location", size=20)
+                                              ],
+                                              alignment=ft.MainAxisAlignment.CENTER,
+                                              spacing=5,
+                                          ),
+                                          padding=ft.padding.all(10),
+                                          ),
+                                          height=90,
+                                          width=415,
+                                          disabled=True,
+                                          on_click=update_coil
+                                      )
     
     def route_change(route):
         page.views.clear()
@@ -180,8 +268,8 @@ def main(page: ft.Page):
                                     ),
                                     padding=ft.padding.all(10),
                                 ),
-                                width=250, 
-                                height=70, 
+                                width=500, 
+                                height=90,
                                 on_click=open_menus
                             ) for userMenus in vUserMenus
                         ]
@@ -199,20 +287,7 @@ def main(page: ft.Page):
                             coil_location,
                             coil_new_location,
                             # ft.OutlinedButton("Update Coil Location", height=50, width=200, on_click=update_coil),
-                            ft.ElevatedButton(content=ft.Container(
-                                                content=ft.Column(
-                                                    [
-                                                        ft.Text(value="Update Coil Location", size=20)                                                            
-                                                    ],
-                                                    alignment=ft.MainAxisAlignment.CENTER,
-                                                    spacing=5,
-                                                ),
-                                                padding=ft.padding.all(10),
-                                                ),
-                                                height=50, 
-                                                width=270,
-                                                on_click=update_coil
-                                            ),
+                            update_coil_btn,
                             # ft.OutlinedButton("Log Out", height=50, width=200, on_click=lambda _: page.go("/menu")),
                             ft.ElevatedButton(content=ft.Container(
                                                 content=ft.Column(
@@ -224,10 +299,11 @@ def main(page: ft.Page):
                                                 ),
                                                 padding=ft.padding.all(10),
                                                 ),
-                                                height=50, 
-                                                width=270,
+                                                height=90,
+                                                width=415,
                                                 on_click=lambda _: page.go("/menu")
-                                            )
+                                            ),
+                            coil_info
                         ],
                     )
                 )
@@ -239,7 +315,7 @@ def main(page: ft.Page):
                         [
                             ft.AppBar(title=ft.Text("Location Check"), bgcolor=ft.colors.SURFACE_VARIANT),
                             ft.Column(controls=[ft.Row(controls=[coil_location_view,ft.FloatingActionButton(icon=ft.icons.CHECK, on_click=add_dataTable),ft.FloatingActionButton(icon=ft.icons.CANCEL_SHARP, on_click=reset_dataTable)])]),
-                            coil_table
+                            coil_table_list
                         ]
                     )
                 )
@@ -269,6 +345,10 @@ def main(page: ft.Page):
         userPassCodeURL = ("/" + user_passcode.value)
         response = req.get(base_url_usersPassword + userURL, headers=headers)
         responeEncoded = req.get(base_url_usersEncodedPassword + userPassCodeURL, headers=headers)
+        
+        if user_passcode.value == "":
+            authMessage.value = "Failed to authenticate"
+            page.update()
 
         if response.status_code == 200 and responeEncoded.status_code == 200:
             response_json = response.json()
@@ -312,20 +392,7 @@ def main(page: ft.Page):
     def reset_password():
         user_passcode.value = ''
         authMessage.value = ''
-
-    def update_coil(e):
-        #TODO: update the coil location via REST api call
-        
-        abp = False
-        page.overlay.clear()
-        if abp == True:
-            page.overlay.append(successCoil)
-            successCoil.open = True
-        else:
-            page.overlay.append(failedCoil)
-            failedCoil.open = True
-        coil_name.focus()
-        page.update()        
+    
 
     # Reset the screen location check
     def reset_dataTable(e):
