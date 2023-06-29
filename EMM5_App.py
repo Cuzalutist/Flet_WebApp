@@ -67,11 +67,42 @@ def main(page: ft.Page):
             page.update()
         else:
             print("Request failed with status code:", response.status_code)
+    
+    def location_changed(e):
+        locationURL = ("/" + coil_location_view.value)
+        response_location = req.get(base_url_location + locationURL, headers=headers)
+        
+        if response_location.status_code == 200:
+            response_location_json = response_location.json()
+            isValidLocation = response_location_json['response']['validLocation']
+
+            if eval(isValidLocation) == True:
+                if coil_location_view.value == '':
+                    data_table.clear()
+                else:
+                    response = req.get(base_url_coilLocation + locationURL, headers=headers)
+                    if response.status_code == 200:
+                        coil_table_list.visible = True
+                        response_json = response.json()
+                        vCoilRecords = response_json['response']['ttCoilLocation']['ttCoilLocation']
+                        data_table.clear()
+                        for vCoilRecord in vCoilRecords:
+                            # print(vCoilRecord['coilName'])
+                            data_table.append(ft.DataRow(
+                                              cells=[
+                                                ft.DataCell(ft.Text(vCoilRecord['coilName'])),
+                                                ft.DataCell(ft.Text(vCoilRecord['coilNum'])),
+                                                ft.DataCell(ft.Text(vCoilRecord['coilLocation'])),
+                                            ],
+                                    ))
+            else:
+                coil_table_list.visible = False
+            page.update()
 
     # RELOCATE COIL
     coil_name = ft.TextField(label="Coil", autofocus=True, width=350, hint_text="Scanned Coil Name", on_change=coil_changed)
     coil_location = ft.TextField(label="Old Location", disabled=True)
-    coil_location_view = ft.TextField(label="Location", autofocus=True, width=280, hint_text="Scanned Location")
+    coil_location_view = ft.TextField(label="Location", autofocus=True, width=350, hint_text="Scanned Location", on_change=location_changed)
     coil_new_location = ft.TextField(label="New Location", hint_text="New coil location")
     coil_inventory = ft.Text("Inventory under construction !!")
     authMessage = ft.Text(value='', color="red", weight=ft.FontWeight.BOLD, size=20)
@@ -84,7 +115,7 @@ def main(page: ft.Page):
     )
     
     data_table = []
-    coil_table_list = ft.ListView(expand=1, auto_scroll=False)
+    coil_table_list = ft.ListView(expand=1, auto_scroll=False, visible=False)
     coil_table = ft.DataTable(
                     columns=[
                         ft.DataColumn(ft.Text("CoilName")),
@@ -122,6 +153,7 @@ def main(page: ft.Page):
                 if request.status_code == 200:
                     coil_info.visible = True
                     coil_info_text.value = "Coil " + coil_name.value + " location has been changed to " + coil_new_location.value + " successfully !!"
+                    coil_info_text.color = "green"
                     coil_location.value = coil_new_location.value
                     page.overlay.append(successCoil)
                     successCoil.open = True
@@ -318,7 +350,7 @@ def main(page: ft.Page):
                         "/menus/locationCheck",
                         [
                             ft.AppBar(title=ft.Text("Location Check"), bgcolor=ft.colors.SURFACE_VARIANT),
-                            ft.Column(controls=[ft.Row(controls=[coil_location_view,ft.FloatingActionButton(icon=ft.icons.CHECK, on_click=add_dataTable),ft.FloatingActionButton(icon=ft.icons.CANCEL_SHARP, on_click=reset_dataTable)])]),
+                            ft.Column(controls=[ft.Row(controls=[coil_location_view,ft.FloatingActionButton(icon=ft.icons.CANCEL_SHARP, on_click=reset_dataTable)])]),
                             coil_table_list
                         ]
                     )
@@ -365,29 +397,6 @@ def main(page: ft.Page):
             else:
                 authMessage.value = "Failed to authenticate"
                 page.update()
-    
-    # Check coils and fill the table
-    def add_dataTable(e):
-        locationURL = ("/" + coil_location_view.value)
-        response = req.get(base_url_coilLocation + locationURL, headers=headers)
-        if coil_location_view.value == '':
-            data_table.clear()
-        else:
-            if response.status_code == 200:
-                response_json = response.json()
-                vCoilRecords = response_json['response']['ttCoilLocation']['ttCoilLocation']
-                data_table.clear()
-                for vCoilRecord in vCoilRecords:
-                    # print(vCoilRecord['coilName'])
-                    data_table.append(ft.DataRow(
-                                      cells=[
-                                        ft.DataCell(ft.Text(vCoilRecord['coilName'])),
-                                        ft.DataCell(ft.Text(vCoilRecord['coilNum'])),
-                                        ft.DataCell(ft.Text(vCoilRecord['coilLocation'])),
-                                    ],
-                            ))
-        coil_location_view.focus()
-        page.update()
 
     def reset_coil_location():
         coil_location_view.value = ''
