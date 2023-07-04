@@ -11,8 +11,8 @@ def main(page: ft.Page):
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.title = "EMM Mobile"
     page.theme_mode = "light"
-    page.window_height = 800
-    page.window_width = 450
+    page.window_height = 667
+    page.window_width = 390
     vHost = "http://192.168.1.78:8980/REST_EMMService/rest/REST_EMMService"
 
     #Call REST API HERE TO LIST THE USERS
@@ -100,9 +100,9 @@ def main(page: ft.Page):
             page.update()
 
     # RELOCATE COIL
-    coil_name = ft.TextField(label="Coil", autofocus=True, width=350, hint_text="Scanned Coil Name", on_change=coil_changed)
-    coil_location = ft.TextField(label="Old Location", disabled=True)
-    coil_location_view = ft.TextField(label="Location", autofocus=True, width=350, hint_text="Scanned Location", on_change=location_changed)
+    coil_name = ft.TextField(label="Coil", autofocus=True, width=290, hint_text="Scanned Coil Name", on_change=coil_changed)
+    coil_location = ft.TextField(label="Old Location", width=380, disabled=True)
+    coil_location_view = ft.TextField(label="Location", autofocus=True, width=290, hint_text="Scanned Location", on_change=location_changed)
     coil_new_location = ft.TextField(label="New Location", hint_text="New coil location")
     coil_inventory = ft.Text("Inventory under construction !!")
     authMessage = ft.Text(value='', color="red", weight=ft.FontWeight.BOLD, size=20)
